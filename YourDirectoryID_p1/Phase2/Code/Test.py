@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
 """
-CMSC733 Spring 2019: Classical and Deep Learning Approaches for
+RBE/CS Fall 2022: Classical and Deep Learning Approaches for
 Geometric Computer Vision
-Homework 0: Alohomora: Phase 2 Starter Code
+Project 1: MyAutoPano: Phase 2 Starter Code
 
 
 Author(s):
-Nitin J. Sanket (nitinsan@terpmail.umd.edu)
-PhD Candidate in Computer Science,
-University of Maryland, College Park
+Lening Li (lli4@wpi.edu)
+Teaching Assistant in Robotics Engineering,
+Worcester Polytechnic Institute
 """
 
 

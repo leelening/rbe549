@@ -1,19 +1,17 @@
 #!/usr/bin/evn python
 
 """
-CMSC733 Spring 2019: Classical and Deep Learning Approaches for
+RBE/CS Fall 2022: Classical and Deep Learning Approaches for
 Geometric Computer Vision
-Project1: MyAutoPano: Phase 1 Starter Code
+Project 1: MyAutoPano: Phase 2 Starter Code
 
-Author(s): 
-Chahat Deep Singh (chahat@terpmail.umd.edu) 
-PhD Student in Computer Science,
-University of Maryland, College Park
 
-Nitin J. Sanket (nitinsan@terpmail.umd.edu)
-PhD Candidate in Computer Science,
-University of Maryland, College Park
+Author(s):
+Lening Li (lli4@wpi.edu)
+Teaching Assistant in Robotics Engineering,
+Worcester Polytechnic Institute
 """
+
 
 # Code starts here:
 

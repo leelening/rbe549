@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 
 """
-CMSC733 Spring 2019: Classical and Deep Learning Approaches for
+RBE/CS Fall 2022: Classical and Deep Learning Approaches for
 Geometric Computer Vision
 Project 1: MyAutoPano: Phase 2 Starter Code
 
 
 Author(s):
-Nitin J. Sanket (nitinsan@terpmail.umd.edu)
-PhD Candidate in Computer Science,
-University of Maryland, College Park
+Lening Li (lli4@wpi.edu)
+Teaching Assistant in Robotics Engineering,
+Worcester Polytechnic Institute
 """
+
 
 # Dependencies:
 # opencv, do (pip install opencv-python)
@@ -43,10 +44,10 @@ from Misc.TFSpatialTransformer import *
 # Don't generate pyc codes
 sys.dont_write_bytecode = True
 
-    
+
 def GenerateBatch(BasePath, DirNamesTrain, TrainLabels, ImageSize, MiniBatchSize):
     """
-    Inputs: 
+    Inputs:
     BasePath - Path to COCO folder without "/" at the end
     DirNamesTrain - Variable with Subfolder paths to train files
     NOTE that Train can be replaced by Val/Test for generating batch corresponding to validation (held-out testing in this case)/testing
@@ -56,19 +57,19 @@ def GenerateBatch(BasePath, DirNamesTrain, TrainLabels, ImageSize, MiniBatchSize
     MiniBatchSize is the size of the MiniBatch
     Outputs:
     I1Batch - Batch of images
-    LabelBatch - Batch of one-hot encoded labels 
+    LabelBatch - Batch of one-hot encoded labels
     """
     I1Batch = []
     LabelBatch = []
-    
+
     ImageNum = 0
     while ImageNum < MiniBatchSize:
         # Generate random image
         RandIdx = random.randint(0, len(DirNamesTrain)-1)
-        
-        RandImageName = BasePath + os.sep + DirNamesTrain[RandIdx] + '.jpg'   
+
+        RandImageName = BasePath + os.sep + DirNamesTrain[RandIdx] + '.jpg'
         ImageNum += 1
-    	
+
     	##########################################################
     	# Add any standardization or data augmentation here!
     	##########################################################
@@ -79,7 +80,7 @@ def GenerateBatch(BasePath, DirNamesTrain, TrainLabels, ImageSize, MiniBatchSize
         # Append All Images and Mask
         I1Batch.append(I1)
         LabelBatch.append(Label)
-        
+
     return I1Batch, LabelBatch
 
 
@@ -92,14 +93,14 @@ def PrettyPrint(NumEpochs, DivTrain, MiniBatchSize, NumTrainSamples, LatestFile)
     print('Mini Batch Size ' + str(MiniBatchSize))
     print('Number of Training Images ' + str(NumTrainSamples))
     if LatestFile is not None:
-        print('Loading latest checkpoint with the name ' + LatestFile)              
+        print('Loading latest checkpoint with the name ' + LatestFile)
 
-    
+
 def TrainOperation(ImgPH, LabelPH, DirNamesTrain, TrainLabels, NumTrainSamples, ImageSize,
                    NumEpochs, MiniBatchSize, SaveCheckPoint, CheckPointPath,
                    DivTrain, LatestFile, BasePath, LogsPath, ModelType):
     """
-    Inputs: 
+    Inputs:
     ImgPH is the Input Image placeholder
     LabelPH is the one-hot encoded label placeholder
     DirNamesTrain - Variable with Subfolder paths to train files
@@ -117,7 +118,7 @@ def TrainOperation(ImgPH, LabelPH, DirNamesTrain, TrainLabels, NumTrainSamples, 
 	ModelType - Supervised or Unsupervised Model
     Outputs:
     Saves Trained network in CheckPointPath and Logs to LogsPath
-    """      
+    """
     # Predict output with forward pass
     prLogits, prSoftMax = HomographyModel(ImgPH, ImageSize, MiniBatchSize)
 
@@ -142,8 +143,8 @@ def TrainOperation(ImgPH, LabelPH, DirNamesTrain, TrainLabels, NumTrainSamples, 
 
     # Setup Saver
     Saver = tf.train.Saver()
-    
-    with tf.Session() as sess:       
+
+    with tf.Session() as sess:
         if LatestFile is not None:
             Saver.restore(sess, CheckPointPath + LatestFile + '.ckpt')
             # Extract only numbers from the name
@@ -156,14 +157,14 @@ def TrainOperation(ImgPH, LabelPH, DirNamesTrain, TrainLabels, NumTrainSamples, 
 
         # Tensorboard
         Writer = tf.summary.FileWriter(LogsPath, graph=tf.get_default_graph())
-            
+
         for Epochs in tqdm(range(StartEpoch, NumEpochs)):
             NumIterationsPerEpoch = int(NumTrainSamples/MiniBatchSize/DivTrain)
             for PerEpochCounter in tqdm(range(NumIterationsPerEpoch)):
                 I1Batch, LabelBatch = GenerateBatch(BasePath, DirNamesTrain, TrainLabels, ImageSize, MiniBatchSize)
                 FeedDict = {ImgPH: I1Batch, LabelPH: LabelBatch}
                 _, LossThisBatch, Summary = sess.run([Optimizer, loss, MergedSummaryOP], feed_dict=FeedDict)
-                
+
                 # Save checkpoint every some SaveCheckPoint's iterations
                 if PerEpochCounter % SaveCheckPoint == 0:
                     # Save the Model learnt in this epoch
@@ -180,11 +181,11 @@ def TrainOperation(ImgPH, LabelPH, DirNamesTrain, TrainLabels, NumTrainSamples, 
             SaveName = CheckPointPath + str(Epochs) + 'model.ckpt'
             Saver.save(sess, save_path=SaveName)
             print('\n' + SaveName + ' Model Saved...')
-            
+
 
 def main():
     """
-    Inputs: 
+    Inputs:
     None
     Outputs:
     Runs the Training and testing code based on the Flag
@@ -220,19 +221,19 @@ def main():
         LatestFile = FindLatestModel(CheckPointPath)
     else:
         LatestFile = None
-    
+
     # Pretty print stats
     PrettyPrint(NumEpochs, DivTrain, MiniBatchSize, NumTrainSamples, LatestFile)
 
     # Define PlaceHolder variables for Input and Predicted output
     ImgPH = tf.placeholder(tf.float32, shape=(MiniBatchSize, ImageSize[0], ImageSize[1], ImageSize[2]))
     LabelPH = tf.placeholder(tf.float32, shape=(MiniBatchSize, NumClasses)) # OneHOT labels
-    
+
     TrainOperation(ImgPH, LabelPH, DirNamesTrain, TrainLabels, NumTrainSamples, ImageSize,
                    NumEpochs, MiniBatchSize, SaveCheckPoint, CheckPointPath,
                    DivTrain, LatestFile, BasePath, LogsPath, ModelType)
-        
-    
+
+
 if __name__ == '__main__':
     main()
- 
+
