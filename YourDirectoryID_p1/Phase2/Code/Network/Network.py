@@ -33,13 +33,13 @@ class HomographyModel(nn.Model):
         # Fill your network initialization of choice here!
         #############################
 
-    def forward(self, img):
+    def forward(self, input_img):
         """
         The forward function
 
-        :param img: input image
-        :type img: torch.sensor
-        :return: the output
+        :param input_img: input image
+        :type input_img: torch.sensor
+        :return: the output of the network
         :rtype: torch.sensor
         """
         #############################

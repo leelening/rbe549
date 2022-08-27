@@ -18,7 +18,7 @@ Worcester Polytechnic Institute
 # skimage, do (apt install python-skimage)
 # termcolor, do (pip install termcolor)
 
-import tensorflow as tf
+import torch
 import cv2
 import sys
 import os

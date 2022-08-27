@@ -105,7 +105,7 @@ def TestOperation(ImgPH, ImageSize, ModelPath, DataPath, LabelsPathPred):
     """
     Length = ImageSize[0]
     # Predict output with forward pass, MiniBatchSize for Test is 1
-    _, prSoftMaxS = CIFAR10Model(ImgPH, ImageSize, 1)
+    _, prSoftMaxS = HomographyModel(ImgPH, ImageSize, 1)
 
     # Setup Saver
     Saver = tf.train.Saver()
