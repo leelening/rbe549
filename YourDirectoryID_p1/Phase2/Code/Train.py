@@ -288,8 +288,9 @@ NumEpochs = 50
 DivTrain = 1.0
 MiniBatchSize = 1
 LoadCheckPoint = 0
-CheckPointPath = "/content/Checkpoints/"
-LogsPath = "/content/Logs"
+BasePath = #Base path of images
+CheckPointPath = #Path to save Checkpoints
+LogsPath = #Path to save Logs for Tensorboard
 
 ## **Doubt
 TrainSet = torchvision.datasets.CocoDetection(root="./data")
