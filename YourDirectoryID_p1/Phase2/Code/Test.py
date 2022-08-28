@@ -31,7 +31,7 @@ import shutil
 import string
 import math as m
 from sklearn.metrics import confusion_matrix
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 import torch
 
 

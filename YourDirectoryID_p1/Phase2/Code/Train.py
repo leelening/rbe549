@@ -23,7 +23,6 @@ import torchvision
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms
 from torch.optim import AdamW
-from torchvision.datasets import CIFAR10
 import cv2
 import sys
 import os
@@ -44,12 +43,12 @@ import shutil
 import string
 from termcolor import colored, cprint
 import math as m
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 
 def SetupAll(CheckPointPath):
     """
-    Inputs: 
+    Inputs:
     CheckPointPath - Path to save checkpoints/model
     Outputs:
     SaveCheckPoint - Save checkpoint every SaveCheckPoint iteration in every epoch, checkpoint saved automatically after every epoch
@@ -58,16 +57,16 @@ def SetupAll(CheckPointPath):
     NumClasses - Number of classes
     """
     # Read and Setup Labels
-    LabelsPathTrain = '/content/data/TxtFiles/LabelsTrain.txt'
+    LabelsPathTrain = "/content/data/TxtFiles/LabelsTrain.txt"
     TrainLabels = ReadLabels(LabelsPathTrain)
 
     # If CheckPointPath doesn't exist make the path
-    if(not (os.path.isdir(CheckPointPath))):
-       os.makedirs(CheckPointPath)
-        
+    if not (os.path.isdir(CheckPointPath)):
+        os.makedirs(CheckPointPath)
+
     # Save checkpoint every SaveCheckPoint iteration in every epoch, checkpoint saved automatically after every epoch
-    SaveCheckPoint = 100 
-    
+    SaveCheckPoint = 100
+
     # Image Input Shape
     ImageSize = [32, 32, 3]
     NumTrainSamples = len(TrainSet)
@@ -79,26 +78,26 @@ def SetupAll(CheckPointPath):
 
 
 def ReadLabels(LabelsPathTrain):
-    if(not (os.path.isfile(LabelsPathTrain))):
-        print('ERROR: Train Labels do not exist in '+LabelsPathTrain)
+    if not (os.path.isfile(LabelsPathTrain)):
+        print("ERROR: Train Labels do not exist in " + LabelsPathTrain)
         sys.exit()
     else:
-        TrainLabels = open(LabelsPathTrain, 'r')
+        TrainLabels = open(LabelsPathTrain, "r")
         TrainLabels = TrainLabels.read()
         TrainLabels = map(float, TrainLabels.split())
 
     return TrainLabels
-    
+
 
 def ReadDirNames(ReadPath):
     """
-    Inputs: 
+    Inputs:
     ReadPath is the path of the file you want to read
     Outputs:
     DirNames is the data loaded from /content/data/TxtFiles/DirNames.txt which has full path to all image files without extension
     """
     # Read text files
-    DirNames = open(ReadPath, 'r')
+    DirNames = open(ReadPath, "r")
     DirNames = DirNames.read()
     DirNames = DirNames.split()
     return DirNames
@@ -106,7 +105,7 @@ def ReadDirNames(ReadPath):
 
 def GenerateBatch(TrainSet, TrainLabels, ImageSize, MiniBatchSize):
     """
-    Inputs: 
+    Inputs:
     BasePath - Path to CIFAR10 folder without "/" at the end
     DirNamesTrain - Variable with Subfolder paths to train files
     NOTE that Train can be replaced by Val/Test for generating batch corresponding to validation (held-out testing in this case)/testing
@@ -116,29 +115,29 @@ def GenerateBatch(TrainSet, TrainLabels, ImageSize, MiniBatchSize):
     MiniBatchSize is the size of the MiniBatch
     Outputs:
     I1Batch - Batch of images
-    LabelBatch - Batch of one-hot encoded labels 
+    LabelBatch - Batch of one-hot encoded labels
     """
     convert_tensor = transforms.ToTensor()
     I1Batch = []
     LabelBatch = []
-    
+
     ImageNum = 0
     while ImageNum < MiniBatchSize:
         # Generate random image
-        RandIdx = random.randint(0, len(TrainSet)-1)
-        
+        RandIdx = random.randint(0, len(TrainSet) - 1)
+
         ImageNum += 1
-    	
-    	  ##########################################################
-    	  # Add any standardization or data augmentation here!
-    	  ##########################################################
+
+        ##########################################################
+        # Add any standardization or data augmentation here!
+        ##########################################################
 
         I1, Label = TrainSet[RandIdx]
 
         # Append All Images and Mask
         I1Batch.append(I1)
         LabelBatch.append(torch.tensor(Label))
-        
+
     return torch.stack(I1Batch), torch.stack(LabelBatch)
 
 
@@ -146,12 +145,12 @@ def PrettyPrint(NumEpochs, DivTrain, MiniBatchSize, NumTrainSamples, LatestFile)
     """
     Prints all stats with all arguments
     """
-    print('Number of Epochs Training will run for ' + str(NumEpochs))
-    print('Factor of reduction in training data is ' + str(DivTrain))
-    print('Mini Batch Size ' + str(MiniBatchSize))
-    print('Number of Training Images ' + str(NumTrainSamples))
+    print("Number of Epochs Training will run for " + str(NumEpochs))
+    print("Factor of reduction in training data is " + str(DivTrain))
+    print("Mini Batch Size " + str(MiniBatchSize))
+    print("Number of Training Images " + str(NumTrainSamples))
     if LatestFile is not None:
-        print('Loading latest checkpoint with the name ' + LatestFile)
+        print("Loading latest checkpoint with the name " + LatestFile)
 
 
 def LossFn(I1Batch, LabelBatch):
@@ -160,9 +159,24 @@ def LossFn(I1Batch, LabelBatch):
     ###############################################
     pass
 
-def TrainOperation(ImgPH, LabelPH, DirNamesTrain, TrainLabels, NumTrainSamples, ImageSize,
-                   NumEpochs, MiniBatchSize, SaveCheckPoint, CheckPointPath,
-                   DivTrain, LatestFile, BasePath, LogsPath, ModelType):
+
+def TrainOperation(
+    ImgPH,
+    LabelPH,
+    DirNamesTrain,
+    TrainLabels,
+    NumTrainSamples,
+    ImageSize,
+    NumEpochs,
+    MiniBatchSize,
+    SaveCheckPoint,
+    CheckPointPath,
+    DivTrain,
+    LatestFile,
+    BasePath,
+    LogsPath,
+    ModelType,
+):
     """
     Inputs:
     ImgPH is the Input Image placeholder
@@ -179,7 +193,7 @@ def TrainOperation(ImgPH, LabelPH, DirNamesTrain, TrainLabels, NumTrainSamples, 
     LatestFile - Latest checkpointfile to continue training
     BasePath - Path to COCO folder without "/" at the end
     LogsPath - Path to save Tensorboard Logs
-	ModelType - Supervised or Unsupervised Model
+        ModelType - Supervised or Unsupervised Model
     Outputs:
     Saves Trained network in CheckPointPath and Logs to LogsPath
     """
@@ -196,48 +210,77 @@ def TrainOperation(ImgPH, LabelPH, DirNamesTrain, TrainLabels, NumTrainSamples, 
     Writer = SummaryWriter(LogsPath)
 
     if LatestFile is not None:
-        CheckPoint = torch.load(CheckPointPath + LatestFile + '.ckpt')
+        CheckPoint = torch.load(CheckPointPath + LatestFile + ".ckpt")
         # Extract only numbers from the name
-        StartEpoch = int(''.join(c for c in LatestFile.split('a')[0] if c.isdigit()))
-        model.load_state_dict(CheckPoint['model_state_dict'])
-        print('Loaded latest checkpoint with the name ' + LatestFile + '....')
+        StartEpoch = int("".join(c for c in LatestFile.split("a")[0] if c.isdigit()))
+        model.load_state_dict(CheckPoint["model_state_dict"])
+        print("Loaded latest checkpoint with the name " + LatestFile + "....")
     else:
         StartEpoch = 0
-        print('New model initialized....')
-        
+        print("New model initialized....")
+
     for Epochs in tqdm(range(StartEpoch, NumEpochs)):
-        NumIterationsPerEpoch = int(NumTrainSamples/MiniBatchSize/DivTrain)
+        NumIterationsPerEpoch = int(NumTrainSamples / MiniBatchSize / DivTrain)
         for PerEpochCounter in tqdm(range(NumIterationsPerEpoch)):
             Batch = GenerateBatch(TrainSet, TrainLabels, ImageSize, MiniBatchSize)
-            
+
             # Predict output with forward pass
             LossThisBatch = model.training_step(Batch)
 
             Optimizer.zero_grad()
             LossThisBatch.backward()
             Optimizer.step()
-            
+
             # Save checkpoint every some SaveCheckPoint's iterations
             if PerEpochCounter % SaveCheckPoint == 0:
                 # Save the Model learnt in this epoch
-                SaveName =  CheckPointPath + str(Epochs) + 'a' + str(PerEpochCounter) + 'model.ckpt'
-                
-                torch.save({'epoch': Epochs,'model_state_dict': model.state_dict(),'optimizer_state_dict': Optimizer.state_dict(),'loss': LossThisBatch}, SaveName)
-                print('\n' + SaveName + ' Model Saved...')
+                SaveName = (
+                    CheckPointPath
+                    + str(Epochs)
+                    + "a"
+                    + str(PerEpochCounter)
+                    + "model.ckpt"
+                )
+
+                torch.save(
+                    {
+                        "epoch": Epochs,
+                        "model_state_dict": model.state_dict(),
+                        "optimizer_state_dict": Optimizer.state_dict(),
+                        "loss": LossThisBatch,
+                    },
+                    SaveName,
+                )
+                print("\n" + SaveName + " Model Saved...")
 
             result = model.validation_step(Batch)
-            model.epoch_end(Epochs*NumIterationsPerEpoch + PerEpochCounter, result)
+            model.epoch_end(Epochs * NumIterationsPerEpoch + PerEpochCounter, result)
             # Tensorboard
-            Writer.add_scalar('LossEveryIter', result["loss"], Epochs*NumIterationsPerEpoch + PerEpochCounter)
-            Writer.add_scalar('Accuracy', result["acc"], Epochs*NumIterationsPerEpoch + PerEpochCounter)
+            Writer.add_scalar(
+                "LossEveryIter",
+                result["loss"],
+                Epochs * NumIterationsPerEpoch + PerEpochCounter,
+            )
+            Writer.add_scalar(
+                "Accuracy",
+                result["acc"],
+                Epochs * NumIterationsPerEpoch + PerEpochCounter,
+            )
             # If you don't flush the tensorboard doesn't update until a lot of iterations!
             Writer.flush()
 
         # Save model every epoch
-        SaveName = CheckPointPath + str(Epochs) + 'model.ckpt'
-        torch.save({'epoch': Epochs,'model_state_dict': model.state_dict(),'optimizer_state_dict': Optimizer.state_dict(),'loss': LossThisBatch}, SaveName)
-        print('\n' + SaveName + ' Model Saved...')
-        
+        SaveName = CheckPointPath + str(Epochs) + "model.ckpt"
+        torch.save(
+            {
+                "epoch": Epochs,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": Optimizer.state_dict(),
+                "loss": LossThisBatch,
+            },
+            SaveName,
+        )
+        print("\n" + SaveName + " Model Saved...")
 
 
 # Default Hyperparameters
@@ -249,19 +292,24 @@ CheckPointPath = "/content/Checkpoints/"
 LogsPath = "/content/Logs"
 
 ## **Doubt
-TrainSet = torchvision.datasets.CocoDetection(root='./data')
+TrainSet = torchvision.datasets.CocoDetection(root="./data")
 
-Parser.add_argument('--ModelType', default='Unsup', help='Model type, Supervised or Unsupervised? Choose from Sup and Unsup, Default:Unsup')
+Parser.add_argument(
+    "--ModelType",
+    default="Unsup",
+    help="Model type, Supervised or Unsupervised? Choose from Sup and Unsup, Default:Unsup",
+)
 ModelType = Args.ModelType
 #######################################
 
 # Setup all needed parameters including file reading
-SaveCheckPoint, ImageSize, NumTrainSamples, TrainLabels, NumClasses = SetupAll(CheckPointPath)
-
+SaveCheckPoint, ImageSize, NumTrainSamples, TrainLabels, NumClasses = SetupAll(
+    CheckPointPath
+)
 
 
 # Find Latest Checkpoint File
-if LoadCheckPoint==1:
+if LoadCheckPoint == 1:
     LatestFile = FindLatestModel(CheckPointPath)
 else:
     LatestFile = None
@@ -270,6 +318,17 @@ else:
 PrettyPrint(NumEpochs, DivTrain, MiniBatchSize, NumTrainSamples, LatestFile)
 
 
-TrainOperation(TrainLabels, NumTrainSamples, ImageSize,
-                NumEpochs, MiniBatchSize, SaveCheckPoint, CheckPointPath,
-                DivTrain, LatestFile, BasePath, LogsPath, ModelType)
+TrainOperation(
+    TrainLabels,
+    NumTrainSamples,
+    ImageSize,
+    NumEpochs,
+    MiniBatchSize,
+    SaveCheckPoint,
+    CheckPointPath,
+    DivTrain,
+    LatestFile,
+    BasePath,
+    LogsPath,
+    ModelType,
+)
