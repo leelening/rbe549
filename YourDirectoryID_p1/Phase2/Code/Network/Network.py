@@ -37,53 +37,27 @@ def photometric_loss(delta, img_a, patch_b, corners):
 
 
 class HomographyModel(nn.Module):
-    def __init__(self):
+    def __init__(self, InputSize, OutputSize):
+        """
+        Inputs:
+        InputSize - Size of the Input
+        OutputSize - Size of the Output
+        """
         super().__init__()
         #############################
         # Fill your network initialization of choice here!
-        # You need to change the sizes of input and output
         #############################
-        # Spatial transformer localization-network
-        self.localization = nn.Sequential(
-            nn.Conv2d(1, 8, kernel_size=7),
-            nn.MaxPool2d(2, stride=2),
-            nn.ReLU(True),
-            nn.Conv2d(8, 10, kernel_size=5),
-            nn.MaxPool2d(2, stride=2),
-            nn.ReLU(True),
-        )
-        # Regressor for the 3 * 2 affine matrix
-        self.fc_loc = nn.Sequential(
-            nn.Linear(10 * 3 * 3, 32), nn.ReLU(True), nn.Linear(32, 3 * 2)
-        )
 
-        # Initialize the weights/bias with identity transformation
-        self.fc_loc[2].weight.data.zero_()
-        self.fc_loc[2].bias.data.copy_(
-            torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float)
-        )
+    def forward(self, xb):
+        """
+        Input:
+        xb is a MiniBatch of the current image
+        Outputs:
+        out - output of the network
+        """
 
-    # Spatial transformer network forward function
-    def stn(self, x):
-        ###############################################
-        # https://brsoff.github.io/tutorials/intermediate/spatial_transformer_tutorial.html
-        # You need to change the sizes of input and output
-        ###############################################
-        xs = self.localization(x)
-        xs = xs.view(-1, 10 * 3 * 3)
-        theta = self.fc_loc(xs)
-        theta = theta.view(-1, 2, 3)
-
-        grid = F.affine_grid(theta, x.size())
-        x = F.grid_sample(x, grid)
-
-        return x
-
-    def forward(self, x):
-        # transform the input
-        x = self.stn(x)
         #############################
         # Fill your network structure of choice here!
         #############################
 
-        return output
+        return out
