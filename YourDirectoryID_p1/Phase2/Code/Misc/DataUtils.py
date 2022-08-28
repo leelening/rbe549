@@ -17,12 +17,14 @@ import random
 import skimage
 import PIL
 import sys
+
 # Don't generate pyc codes
 sys.dont_write_bytecode = True
 
+
 def SetupAll(BasePath, CheckPointPath):
     """
-    Inputs: 
+    Inputs:
     BasePath is the base path where Images are saved without "/" at the end
     CheckPointPath - Path to save checkpoints/model
     Outputs:
@@ -30,26 +32,26 @@ def SetupAll(BasePath, CheckPointPath):
     SaveCheckPoint - Save checkpoint every SaveCheckPoint iteration in every epoch, checkpoint saved automatically after every epoch
     ImageSize - Size of the image
     NumTrainSamples - length(Train)
-    NumTestRunsPerEpoch - Number of passes of Val data with MiniBatchSize 
+    NumTestRunsPerEpoch - Number of passes of Val data with MiniBatchSize
     Trainabels - Labels corresponding to Train
     NumClasses - Number of classes
     """
     # Setup DirNames
-    DirNamesTrain =  SetupDirNames(BasePath)
+    DirNamesTrain = SetupDirNames(BasePath)
 
     # Read and Setup Labels
-    LabelsPathTrain = './TxtFiles/LabelsTrain.txt'
+    LabelsPathTrain = "./TxtFiles/LabelsTrain.txt"
     TrainLabels = ReadLabels(LabelsPathTrain)
 
     # If CheckPointPath doesn't exist make the path
-    if(not (os.path.isdir(CheckPointPath))):
-       os.makedirs(CheckPointPath)
-        
+    if not (os.path.isdir(CheckPointPath)):
+        os.makedirs(CheckPointPath)
+
     # Save checkpoint every SaveCheckPoint iteration in every epoch, checkpoint saved automatically after every epoch
-    SaveCheckPoint = 100 
-    # Number of passes of Val data with MiniBatchSize 
+    SaveCheckPoint = 100
+    # Number of passes of Val data with MiniBatchSize
     NumTestRunsPerEpoch = 5
-    
+
     # Image Input Shape
     ImageSize = [32, 32, 3]
     NumTrainSamples = len(DirNamesTrain)
@@ -57,40 +59,49 @@ def SetupAll(BasePath, CheckPointPath):
     # Number of classes
     NumClasses = 10
 
-    return DirNamesTrain, SaveCheckPoint, ImageSize, NumTrainSamples, TrainLabels, NumClasses
+    return (
+        DirNamesTrain,
+        SaveCheckPoint,
+        ImageSize,
+        NumTrainSamples,
+        TrainLabels,
+        NumClasses,
+    )
+
 
 def ReadLabels(LabelsPathTrain):
-    if(not (os.path.isfile(LabelsPathTrain))):
-        print('ERROR: Train Labels do not exist in '+LabelsPathTrain)
+    if not (os.path.isfile(LabelsPathTrain)):
+        print("ERROR: Train Labels do not exist in " + LabelsPathTrain)
         sys.exit()
     else:
-        TrainLabels = open(LabelsPathTrain, 'r')
+        TrainLabels = open(LabelsPathTrain, "r")
         TrainLabels = TrainLabels.read()
         TrainLabels = map(float, TrainLabels.split())
 
     return TrainLabels
-    
 
-def SetupDirNames(BasePath): 
+
+def SetupDirNames(BasePath):
     """
-    Inputs: 
+    Inputs:
     BasePath is the base path where Images are saved without "/" at the end
     Outputs:
     Writes a file ./TxtFiles/DirNames.txt with full path to all image files without extension
     """
-    DirNamesTrain = ReadDirNames('./TxtFiles/DirNamesTrain.txt')        
-    
+    DirNamesTrain = ReadDirNames("./TxtFiles/DirNamesTrain.txt")
+
     return DirNamesTrain
+
 
 def ReadDirNames(ReadPath):
     """
-    Inputs: 
+    Inputs:
     ReadPath is the path of the file you want to read
     Outputs:
     DirNames is the data loaded from ./TxtFiles/DirNames.txt which has full path to all image files without extension
     """
     # Read text files
-    DirNames = open(ReadPath, 'r')
+    DirNames = open(ReadPath, "r")
     DirNames = DirNames.read()
     DirNames = DirNames.split()
     return DirNames
