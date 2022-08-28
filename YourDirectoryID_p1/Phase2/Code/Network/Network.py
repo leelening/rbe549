@@ -15,9 +15,25 @@ import sys
 import torch
 import numpy as np
 import torch.nn.functional as F
+import kornia
 
 # Don't generate pyc codes
 sys.dont_write_bytecode = True
+
+
+def photometric_loss(delta, img_a, patch_b, corners):
+    corners_hat = corners + delta
+
+    # in order to apply transform and center crop,
+    # subtract points by top-left corner (corners[N, 0])
+    corners = corners - corners[:, 0].view(-1, 1, 2)
+
+    h = kornia.get_perspective_transform(corners, corners_hat)
+
+    h_inv = torch.inverse(h)
+    patch_b_hat = kornia.warp_perspective(img_a, h_inv, (128, 128))
+
+    return F.l1_loss(patch_b_hat, patch_b)
 
 
 class HomographyModel(nn.Module):
@@ -67,6 +83,7 @@ class HomographyModel(nn.Module):
         # transform the input
         x = self.stn(x)
         #############################
-        # Fill your network here!
+        # Fill your network structure of choice here!
         #############################
+
         return output
