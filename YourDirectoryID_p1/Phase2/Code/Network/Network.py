@@ -38,6 +38,16 @@ class HomographyModel(nn.Model):
             nn.MaxPool2d(2, stride=2),
             nn.ReLU(True),
         )
+        # Regressor for the 3 * 2 affine matrix
+        self.fc_loc = nn.Sequential(
+            nn.Linear(10 * 3 * 3, 32), nn.ReLU(True), nn.Linear(32, 3 * 2)
+        )
+
+        # Initialize the weights/bias with identity transformation
+        self.fc_loc[2].weight.data.zero_()
+        self.fc_loc[2].bias.data.copy_(
+            torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float)
+        )
         #############################
         # Fill your network initialization of choice here!
         #############################
