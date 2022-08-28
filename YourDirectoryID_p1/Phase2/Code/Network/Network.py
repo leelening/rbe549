@@ -12,23 +12,21 @@ Worcester Polytechnic Institute
 
 import torch.nn as nn
 import sys
+import torch
 import numpy as np
+import torch.nn.functional as F
 
 # Don't generate pyc codes
 sys.dont_write_bytecode = True
 
 
-class HomographyModel(nn.Model):
-    def __init__(self, input_size, output_size):
-        """
-        Initialization
-
-        :param input_size: the size of the input
-        :type input_size: int
-        :param output_size: the size of the output
-        :type output_size: int
-        """
+class HomographyModel(nn.Module):
+    def __init__(self):
         super().__init__()
+        #############################
+        # Fill your network initialization of choice here!
+        # You need to change the sizes of input and output
+        #############################
         # Spatial transformer localization-network
         self.localization = nn.Sequential(
             nn.Conv2d(1, 8, kernel_size=7),
@@ -48,12 +46,13 @@ class HomographyModel(nn.Model):
         self.fc_loc[2].bias.data.copy_(
             torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float)
         )
-        #############################
-        # Fill your network initialization of choice here!
-        #############################
 
     # Spatial transformer network forward function
     def stn(self, x):
+        ###############################################
+        # https://brsoff.github.io/tutorials/intermediate/spatial_transformer_tutorial.html
+        # You need to change the sizes of input and output
+        ###############################################
         xs = self.localization(x)
         xs = xs.view(-1, 10 * 3 * 3)
         theta = self.fc_loc(xs)
@@ -64,15 +63,9 @@ class HomographyModel(nn.Model):
 
         return x
 
-    def forward(self, input_img):
-        """
-        The forward function
-
-        :param input_img: input image
-        :type input_img: torch.sensor
-        :return: the output of the network
-        :rtype: torch.sensor
-        """
+    def forward(self, x):
+        # transform the input
+        x = self.stn(x)
         #############################
         # Fill your network here!
         #############################

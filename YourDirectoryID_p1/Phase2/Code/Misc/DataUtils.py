@@ -40,7 +40,7 @@ def SetupAll(BasePath, CheckPointPath):
     DirNamesTrain = SetupDirNames(BasePath)
 
     # Read and Setup Labels
-    LabelsPathTrain = "./TxtFiles/LabelsTrain.txt"
+    LabelsPathTrain = './TxtFiles/LabelsTrain.txt'
     TrainLabels = ReadLabels(LabelsPathTrain)
 
     # If CheckPointPath doesn't exist make the path
@@ -76,7 +76,7 @@ def ReadLabels(LabelsPathTrain):
     else:
         TrainLabels = open(LabelsPathTrain, "r")
         TrainLabels = TrainLabels.read()
-        TrainLabels = map(float, TrainLabels.split())
+        TrainLabels = list(map(float, TrainLabels.split()))
 
     return TrainLabels
 

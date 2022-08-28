@@ -23,6 +23,7 @@ import torchvision
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms
 from torch.optim import AdamW
+from Network.Network import HomographyModel
 import cv2
 import sys
 import os
@@ -37,6 +38,8 @@ from skimage import data, exposure, img_as_float
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+from Misc.MiscUtils import *
+from Misc.DataUtils import *
 from torchvision.transforms import ToTensor
 import argparse
 import shutil
@@ -46,67 +49,10 @@ import math as m
 from tqdm import tqdm
 
 
-def SetupAll(CheckPointPath):
+def GenerateBatch(BasePath, DirNamesTrain, TrainLabels, ImageSize, MiniBatchSize):
     """
     Inputs:
-    CheckPointPath - Path to save checkpoints/model
-    Outputs:
-    SaveCheckPoint - Save checkpoint every SaveCheckPoint iteration in every epoch, checkpoint saved automatically after every epoch
-    ImageSize - Size of the image
-    NumTrainSamples - length(Train)
-    NumClasses - Number of classes
-    """
-    # Read and Setup Labels
-    LabelsPathTrain = "/content/data/TxtFiles/LabelsTrain.txt"
-    TrainLabels = ReadLabels(LabelsPathTrain)
-
-    # If CheckPointPath doesn't exist make the path
-    if not (os.path.isdir(CheckPointPath)):
-        os.makedirs(CheckPointPath)
-
-    # Save checkpoint every SaveCheckPoint iteration in every epoch, checkpoint saved automatically after every epoch
-    SaveCheckPoint = 100
-
-    # Image Input Shape
-    ImageSize = [32, 32, 3]
-    NumTrainSamples = len(TrainSet)
-
-    # Number of classes
-    NumClasses = 10
-
-    return SaveCheckPoint, ImageSize, NumTrainSamples, TrainLabels, NumClasses
-
-
-def ReadLabels(LabelsPathTrain):
-    if not (os.path.isfile(LabelsPathTrain)):
-        print("ERROR: Train Labels do not exist in " + LabelsPathTrain)
-        sys.exit()
-    else:
-        TrainLabels = open(LabelsPathTrain, "r")
-        TrainLabels = TrainLabels.read()
-        TrainLabels = map(float, TrainLabels.split())
-
-    return TrainLabels
-
-
-def ReadDirNames(ReadPath):
-    """
-    Inputs:
-    ReadPath is the path of the file you want to read
-    Outputs:
-    DirNames is the data loaded from /content/data/TxtFiles/DirNames.txt which has full path to all image files without extension
-    """
-    # Read text files
-    DirNames = open(ReadPath, "r")
-    DirNames = DirNames.read()
-    DirNames = DirNames.split()
-    return DirNames
-
-
-def GenerateBatch(TrainSet, TrainLabels, ImageSize, MiniBatchSize):
-    """
-    Inputs:
-    BasePath - Path to CIFAR10 folder without "/" at the end
+    BasePath - Path to COCO folder without "/" at the end
     DirNamesTrain - Variable with Subfolder paths to train files
     NOTE that Train can be replaced by Val/Test for generating batch corresponding to validation (held-out testing in this case)/testing
     TrainLabels - Labels corresponding to Train
@@ -117,25 +63,25 @@ def GenerateBatch(TrainSet, TrainLabels, ImageSize, MiniBatchSize):
     I1Batch - Batch of images
     LabelBatch - Batch of one-hot encoded labels
     """
-    convert_tensor = transforms.ToTensor()
     I1Batch = []
     LabelBatch = []
 
     ImageNum = 0
     while ImageNum < MiniBatchSize:
         # Generate random image
-        RandIdx = random.randint(0, len(TrainSet) - 1)
+        RandIdx = random.randint(0, len(DirNamesTrain) - 1)
 
+        RandImageName = BasePath + os.sep + DirNamesTrain[RandIdx] + ".jpg"
         ImageNum += 1
 
         ##########################################################
         # Add any standardization or data augmentation here!
         ##########################################################
-
-        I1, Label = TrainSet[RandIdx]
+        I1 = np.float32(cv2.imread(RandImageName))
+        Label = convertToOneHot(TrainLabels[RandIdx], 10)
 
         # Append All Images and Mask
-        I1Batch.append(I1)
+        I1Batch.append(torch.from_numpy(I1))
         LabelBatch.append(torch.tensor(Label))
 
     return torch.stack(I1Batch), torch.stack(LabelBatch)
@@ -153,7 +99,7 @@ def PrettyPrint(NumEpochs, DivTrain, MiniBatchSize, NumTrainSamples, LatestFile)
         print("Loading latest checkpoint with the name " + LatestFile)
 
 
-def LossFn(I1Batch, LabelBatch):
+def LossFn(PredicatedLabelBatch, LabelBatch):
     ###############################################
     # Fill your loss function of choice here!
     ###############################################
@@ -161,8 +107,6 @@ def LossFn(I1Batch, LabelBatch):
 
 
 def TrainOperation(
-    ImgPH,
-    LabelPH,
     DirNamesTrain,
     TrainLabels,
     NumTrainSamples,
@@ -198,7 +142,7 @@ def TrainOperation(
     Saves Trained network in CheckPointPath and Logs to LogsPath
     """
     # Predict output with forward pass
-    prLogits, prSoftMax = HomographyModel(ImgPH, ImageSize, MiniBatchSize)
+    model = HomographyModel()
 
     ###############################################
     # Fill your optimizer of choice here!
@@ -222,10 +166,13 @@ def TrainOperation(
     for Epochs in tqdm(range(StartEpoch, NumEpochs)):
         NumIterationsPerEpoch = int(NumTrainSamples / MiniBatchSize / DivTrain)
         for PerEpochCounter in tqdm(range(NumIterationsPerEpoch)):
-            Batch = GenerateBatch(TrainSet, TrainLabels, ImageSize, MiniBatchSize)
+            I1Batch, LabelBatch = GenerateBatch(
+                BasePath, DirNamesTrain, TrainLabels, ImageSize, MiniBatchSize
+            )
 
             # Predict output with forward pass
-            LossThisBatch = model.training_step(Batch)
+            PredicatedLabelBatch = model(I1Batch)
+            LossThisBatch = LossFn(PredicatedLabelBatch, LabelBatch)
 
             Optimizer.zero_grad()
             LossThisBatch.backward()
@@ -253,17 +200,10 @@ def TrainOperation(
                 )
                 print("\n" + SaveName + " Model Saved...")
 
-            result = model.validation_step(Batch)
-            model.epoch_end(Epochs * NumIterationsPerEpoch + PerEpochCounter, result)
             # Tensorboard
             Writer.add_scalar(
                 "LossEveryIter",
-                result["loss"],
-                Epochs * NumIterationsPerEpoch + PerEpochCounter,
-            )
-            Writer.add_scalar(
-                "Accuracy",
-                result["acc"],
+                LossThisBatch,
                 Epochs * NumIterationsPerEpoch + PerEpochCounter,
             )
             # If you don't flush the tensorboard doesn't update until a lot of iterations!
@@ -283,53 +223,106 @@ def TrainOperation(
         print("\n" + SaveName + " Model Saved...")
 
 
-# Default Hyperparameters
-NumEpochs = 50
-DivTrain = 1.0
-MiniBatchSize = 1
-LoadCheckPoint = 0
-BasePath = #Base path of images
-CheckPointPath = #Path to save Checkpoints
-LogsPath = #Path to save Logs for Tensorboard
+def main():
+    """
+    Inputs:
+    # None
+    # Outputs:
+    # Runs the Training and testing code based on the Flag
+    #"""
+    # Parse Command Line arguments
+    Parser = argparse.ArgumentParser()
+    Parser.add_argument(
+        "--BasePath",
+        default="/home/lening/workspace/rbe549/YourDirectoryID_p1/Phase2/Data",
+        help="Base path of images, Default:/home/lening/workspace/rbe549/YourDirectoryID_p1/Phase2/Data",
+    )
+    Parser.add_argument(
+        "--CheckPointPath",
+        default="../Checkpoints/",
+        help="Path to save Checkpoints, Default: ../Checkpoints/",
+    )
 
-## **Doubt
-TrainSet = torchvision.datasets.CocoDetection(root="./data")
+    Parser.add_argument(
+        "--ModelType",
+        default="Unsup",
+        help="Model type, Supervised or Unsupervised? Choose from Sup and Unsup, Default:Unsup",
+    )
+    Parser.add_argument(
+        "--NumEpochs",
+        type=int,
+        default=50,
+        help="Number of Epochs to Train for, Default:50",
+    )
+    Parser.add_argument(
+        "--DivTrain",
+        type=int,
+        default=1,
+        help="Factor to reduce Train data by per epoch, Default:1",
+    )
+    Parser.add_argument(
+        "--MiniBatchSize",
+        type=int,
+        default=1,
+        help="Size of the MiniBatch to use, Default:1",
+    )
+    Parser.add_argument(
+        "--LoadCheckPoint",
+        type=int,
+        default=0,
+        help="Load Model from latest Checkpoint from CheckPointsPath?, Default:0",
+    )
+    Parser.add_argument(
+        "--LogsPath",
+        default="Logs/",
+        help="Path to save Logs for Tensorboard, Default=Logs/",
+    )
 
-Parser.add_argument(
-    "--ModelType",
-    default="Unsup",
-    help="Model type, Supervised or Unsupervised? Choose from Sup and Unsup, Default:Unsup",
-)
-ModelType = Args.ModelType
-#######################################
+    Args = Parser.parse_args()
+    NumEpochs = Args.NumEpochs
+    BasePath = Args.BasePath
+    DivTrain = float(Args.DivTrain)
+    MiniBatchSize = Args.MiniBatchSize
+    LoadCheckPoint = Args.LoadCheckPoint
+    CheckPointPath = Args.CheckPointPath
+    LogsPath = Args.LogsPath
+    ModelType = Args.ModelType
 
-# Setup all needed parameters including file reading
-SaveCheckPoint, ImageSize, NumTrainSamples, TrainLabels, NumClasses = SetupAll(
-    CheckPointPath
-)
+    # Setup all needed parameters including file reading
+    (
+        DirNamesTrain,
+        SaveCheckPoint,
+        ImageSize,
+        NumTrainSamples,
+        TrainLabels,
+        NumClasses,
+    ) = SetupAll(BasePath, CheckPointPath)
+
+    # Find Latest Checkpoint File
+    if LoadCheckPoint == 1:
+        LatestFile = FindLatestModel(CheckPointPath)
+    else:
+        LatestFile = None
+
+    # Pretty print stats
+    PrettyPrint(NumEpochs, DivTrain, MiniBatchSize, NumTrainSamples, LatestFile)
+
+    TrainOperation(
+        DirNamesTrain,
+        TrainLabels,
+        NumTrainSamples,
+        ImageSize,
+        NumEpochs,
+        MiniBatchSize,
+        SaveCheckPoint,
+        CheckPointPath,
+        DivTrain,
+        LatestFile,
+        BasePath,
+        LogsPath,
+        ModelType,
+    )
 
 
-# Find Latest Checkpoint File
-if LoadCheckPoint == 1:
-    LatestFile = FindLatestModel(CheckPointPath)
-else:
-    LatestFile = None
-
-# Pretty print stats
-PrettyPrint(NumEpochs, DivTrain, MiniBatchSize, NumTrainSamples, LatestFile)
-
-
-TrainOperation(
-    TrainLabels,
-    NumTrainSamples,
-    ImageSize,
-    NumEpochs,
-    MiniBatchSize,
-    SaveCheckPoint,
-    CheckPointPath,
-    DivTrain,
-    LatestFile,
-    BasePath,
-    LogsPath,
-    ModelType,
-)
+if __name__ == "__main__":
+    main()
