@@ -21,6 +21,14 @@ import kornia
 sys.dont_write_bytecode = True
 
 
+def loss_fn(out, labels):
+    ###############################################
+    # Fill your loss function of choice here!
+    ###############################################
+    loss = ...
+    return loss
+
+
 def photometric_loss(delta, img_a, patch_b, corners):
     corners_hat = corners + delta
 
@@ -33,10 +41,38 @@ def photometric_loss(delta, img_a, patch_b, corners):
     h_inv = torch.inverse(h)
     patch_b_hat = kornia.warp_perspective(img_a, h_inv, (128, 128))
 
-    return F.l1_loss(patch_b_hat, patch_b)
+    return loss_fn(patch_b_hat, patch_b)
 
 
-class HomographyModel(nn.Module):
+class HomographyModel(pl.LightningModule):
+    def __init__(self, hparams):
+        super(HomographyModel, self).__init__()
+        self.hparams = hparams
+        self.model = Net()
+
+    def forward(self, a, b):
+        return self.model(a, b)
+
+    def training_step(self, batch, batch_idx):
+        img_a, patch_a, patch_b, corners, gt = batch
+        delta = self.model(patch_a, patch_b)
+        loss = photometric_loss(delta, img_a, patch_b, corners)
+        logs = {"loss": loss}
+        return {"loss": loss, "log": logs}
+
+    def validation_step(self, batch, batch_idx):
+        img_a, patch_a, patch_b, corners, gt = batch
+        delta = self.model(patch_a, patch_b)
+        loss = photometric_loss(delta, img_a, patch_b, corners)
+        return {"val_loss": loss}
+
+    def validation_epoch_end(self, outputs):
+        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        logs = {"val_loss": avg_loss}
+        return {"avg_val_loss": avg_loss, "log": logs}
+
+
+class Net(nn.Module):
     def __init__(self, InputSize, OutputSize):
         """
         Inputs:
@@ -48,10 +84,11 @@ class HomographyModel(nn.Module):
         # Fill your network initialization of choice here!
         #############################
 
-    def forward(self, xb):
+    def forward(self, xa, xb):
         """
         Input:
-        xb is a MiniBatch of the current image
+        xa is a MiniBatch of the image a
+        xb is a MiniBatch of the image b
         Outputs:
         out - output of the network
         """

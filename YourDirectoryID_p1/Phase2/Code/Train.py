@@ -200,10 +200,11 @@ def TrainOperation(
                 )
                 print("\n" + SaveName + " Model Saved...")
 
+            result = model.validation_step(Batch)
             # Tensorboard
             Writer.add_scalar(
                 "LossEveryIter",
-                LossThisBatch,
+                result["val_loss"],
                 Epochs * NumIterationsPerEpoch + PerEpochCounter,
             )
             # If you don't flush the tensorboard doesn't update until a lot of iterations!
