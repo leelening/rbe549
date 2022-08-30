@@ -49,22 +49,22 @@ import math as m
 from tqdm import tqdm
 
 
-def GenerateBatch(BasePath, DirNamesTrain, TrainLabels, ImageSize, MiniBatchSize):
+def GenerateBatch(BasePath, DirNamesTrain, TrainCoordinates, ImageSize, MiniBatchSize):
     """
     Inputs:
     BasePath - Path to COCO folder without "/" at the end
     DirNamesTrain - Variable with Subfolder paths to train files
     NOTE that Train can be replaced by Val/Test for generating batch corresponding to validation (held-out testing in this case)/testing
-    TrainLabels - Labels corresponding to Train
-    NOTE that TrainLabels can be replaced by Val/TestLabels for generating batch corresponding to validation (held-out testing in this case)/testing
+    TrainCoordinates - Coordinatess corresponding to Train
+    NOTE that TrainCoordinates can be replaced by Val/TestCoordinatess for generating batch corresponding to validation (held-out testing in this case)/testing
     ImageSize - Size of the Image
     MiniBatchSize is the size of the MiniBatch
     Outputs:
     I1Batch - Batch of images
-    LabelBatch - Batch of one-hot encoded labels
+    CoordinatesBatch - Batch of coordinates
     """
     I1Batch = []
-    LabelBatch = []
+    CoordinatesBatch = []
 
     ImageNum = 0
     while ImageNum < MiniBatchSize:
@@ -78,13 +78,13 @@ def GenerateBatch(BasePath, DirNamesTrain, TrainLabels, ImageSize, MiniBatchSize
         # Add any standardization or data augmentation here!
         ##########################################################
         I1 = np.float32(cv2.imread(RandImageName))
-        Label = convertToOneHot(TrainLabels[RandIdx], 10)
+        Coordinates = TrainCoordinates[RandIdx], 10
 
         # Append All Images and Mask
         I1Batch.append(torch.from_numpy(I1))
-        LabelBatch.append(torch.tensor(Label))
+        CoordinatesBatch.append(torch.tensor(Coordinates))
 
-    return torch.stack(I1Batch), torch.stack(LabelBatch)
+    return torch.stack(I1Batch), torch.stack(CoordinatesBatch)
 
 
 def PrettyPrint(NumEpochs, DivTrain, MiniBatchSize, NumTrainSamples, LatestFile):
@@ -99,16 +99,9 @@ def PrettyPrint(NumEpochs, DivTrain, MiniBatchSize, NumTrainSamples, LatestFile)
         print("Loading latest checkpoint with the name " + LatestFile)
 
 
-def LossFn(PredicatedLabelBatch, LabelBatch):
-    ###############################################
-    # Fill your loss function of choice here!
-    ###############################################
-    pass
-
-
 def TrainOperation(
     DirNamesTrain,
-    TrainLabels,
+    TrainCoordinates,
     NumTrainSamples,
     ImageSize,
     NumEpochs,
@@ -124,9 +117,8 @@ def TrainOperation(
     """
     Inputs:
     ImgPH is the Input Image placeholder
-    LabelPH is the one-hot encoded label placeholder
     DirNamesTrain - Variable with Subfolder paths to train files
-    TrainLabels - Labels corresponding to Train/Test
+    TrainCoordinates - Coordinates corresponding to Train/Test
     NumTrainSamples - length(Train)
     ImageSize - Size of the image
     NumEpochs - Number of passes through the Train data
@@ -166,13 +158,13 @@ def TrainOperation(
     for Epochs in tqdm(range(StartEpoch, NumEpochs)):
         NumIterationsPerEpoch = int(NumTrainSamples / MiniBatchSize / DivTrain)
         for PerEpochCounter in tqdm(range(NumIterationsPerEpoch)):
-            I1Batch, LabelBatch = GenerateBatch(
-                BasePath, DirNamesTrain, TrainLabels, ImageSize, MiniBatchSize
+            I1Batch, CoordinatesBatch = GenerateBatch(
+                BasePath, DirNamesTrain, TrainCoordinates, ImageSize, MiniBatchSize
             )
 
             # Predict output with forward pass
-            PredicatedLabelBatch = model(I1Batch)
-            LossThisBatch = LossFn(PredicatedLabelBatch, LabelBatch)
+            PredicatedCoordinatesBatch = model(I1Batch)
+            LossThisBatch = LossFn(PredicatedCoordinatesBatch, CoordinatesBatch)
 
             Optimizer.zero_grad()
             LossThisBatch.backward()
@@ -295,7 +287,7 @@ def main():
         SaveCheckPoint,
         ImageSize,
         NumTrainSamples,
-        TrainLabels,
+        TrainCoordinates,
         NumClasses,
     ) = SetupAll(BasePath, CheckPointPath)
 
@@ -310,7 +302,7 @@ def main():
 
     TrainOperation(
         DirNamesTrain,
-        TrainLabels,
+        TrainCoordinates,
         NumTrainSamples,
         ImageSize,
         NumEpochs,
