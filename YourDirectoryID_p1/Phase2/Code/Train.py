@@ -78,7 +78,7 @@ def GenerateBatch(BasePath, DirNamesTrain, TrainCoordinates, ImageSize, MiniBatc
         # Add any standardization or data augmentation here!
         ##########################################################
         I1 = np.float32(cv2.imread(RandImageName))
-        Coordinates = TrainCoordinates[RandIdx], 10
+        Coordinates = TrainCoordinates[RandIdx]
 
         # Append All Images and Mask
         I1Batch.append(torch.from_numpy(I1))
