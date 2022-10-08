@@ -79,4 +79,16 @@ dependencies:
   - xz=5.2.6=h166bdaf_0
   - zlib=1.2.12=h166bdaf_2
   - zstd=1.5.2=h8a70e8d_4
+  - pip:
+    - contourpy==1.0.5
+    - cycler==0.11.0
+    - fonttools==4.37.4
+    - kiwisolver==1.4.4
+    - matplotlib==3.6.1
+    - opencv-python==4.6.0.66
+    - opencv-python-headless==4.5.3.56
+    - packaging==21.3
+    - pyparsing==3.0.9
+    - python-dateutil==2.8.2
+    - scipy==1.9.1
 prefix: /home/lli4/anaconda3/envs/rbe549
