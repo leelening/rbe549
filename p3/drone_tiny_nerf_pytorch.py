@@ -19,6 +19,7 @@ The authors released a TensorFlow implementation [here](https://github.com/bmild
 
 # Import all the good stuff
 from typing import Optional
+from tqdm import tqdm
 
 import numpy as np
 import torch
@@ -327,7 +328,9 @@ def get_minibatches(inputs: torch.Tensor, chunksize: Optional[int] = 1024 * 8):
 
 """## Determine device to run on (GPU vs CPU)"""
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
+
 
 """## Load up input images, poses, intrinsics, etc."""
 
@@ -337,10 +340,10 @@ import scipy.io as sio
 data = sio.loadmat('left.mat')
 
 # Images
-images = np.stack(data["original_images"][0], axis=0).astype(np.float64)
+images = np.stack(data["original_images"][0], axis=0).astype(np.int16)
 
 # Camera extrinsics (poses)
-tform_cam2world = np.stack(data["poses"][0], axis=0).astype(np.float64)
+tform_cam2world = np.stack(data["poses"][0], axis=0).astype(np.int16)
 tform_cam2world = torch.from_numpy(tform_cam2world).to(device)
 
 # Focal length (intrinsics)
@@ -426,7 +429,7 @@ depth_samples_per_ray = 32
 # Chunksize (Note: this isn't batchsize in the conventional sense. This only
 # specifies the number of rays to be queried in one go. Backprop still happens
 # only after all rays from the current "bundle" are queried and rendered).
-chunksize = 16384  # Use chunksize of about 4096 to fit in ~1.4 GB of GPU memory.
+chunksize = 4  # Use chunksize of about 4096 to fit in ~1.4 GB of GPU memory.
 
 # Optimizer parameters
 lr = 5e-3
@@ -459,7 +462,7 @@ np.random.seed(seed)
 psnrs = []
 iternums = []
 
-for i in range(num_iters):
+for i in tqdm(range(num_iters)):
 
     # Randomly pick an image as the target.
     target_img_idx = np.random.randint(images.shape[0])
