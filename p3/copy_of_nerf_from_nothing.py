@@ -1024,7 +1024,7 @@ def train():
             _ = plot_samples(z_sample_strat, z_sample_hierarch, ax=ax[3])
             ax[3].margins(0)
             plt.show()
-            plt.save("{}.png".format(i))
+            plt.savefig("{}.png".format(i))
 
         # Check PSNR for issues and stop if any are found.
         if i == warmup_iters - 1:
