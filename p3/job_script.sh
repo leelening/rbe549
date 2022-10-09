@@ -5,4 +5,4 @@
 #SBATCH --mem=20G
 
 module load cuda11.6/toolkit
-python code.py
+python drone_tiny_nerf_pytorch.py
