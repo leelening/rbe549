@@ -449,6 +449,8 @@ for i in tqdm(range(num_iters)):
     target_img = images[target_img_idx].to(device)
     target_tform_cam2world = tform_cam2world[target_img_idx].to(device)
 
+    print(torch.cuda.memory_summary())
+
     # Run one iteration of TinyNeRF and get the rendered RGB image.
     rgb_predicted = run_one_iter_of_tinynerf(
         height,
